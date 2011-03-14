@@ -6,11 +6,10 @@
 #
 # Sample Usage: include tftp
 #
-class tftp {
+class tftp ($base = "/usr/local/tftpboot",
+            $base_alias = "") {
 
     include xinetd
-
-    $base = "/data/tftpboot"
 
     package { "tftp-server":
         require => Class["xinetd"],
@@ -19,6 +18,13 @@ class tftp {
     file { "$base":
         ensure => directory;
     } # file
+
+    if $base_alias {
+      file { "$base_alias":
+          ensure => link,
+          target => "$base";
+      }
+    }
 
     xinetd::service {"tftp":
         port        => "69",
