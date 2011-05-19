@@ -7,7 +7,8 @@
 # Sample Usage: include tftp
 #
 class tftp ($base = "/usr/local/tftpboot",
-            $base_alias = "") {
+            $base_alias = "",
+            $refuse = []) {
 
     include xinetd
 
@@ -26,10 +27,16 @@ class tftp ($base = "/usr/local/tftpboot",
       }
     }
 
+    if $refuse {
+      $refuse_args = inline_template("<%= refuse.map{ |ref| '-r ' + ref + ' ' } %>")
+    }
+
+    $server_args = "$refuse_args-s $base"
+
     xinetd::service {"tftp":
         port        => "69",
         server      => "/usr/sbin/in.tftpd",
-        server_args => "-s $base",
+        server_args => $server_args,
         socket_type => "dgram",
         protocol    => "udp",
         cps         => "100 2",
