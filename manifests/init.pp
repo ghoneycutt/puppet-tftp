@@ -23,7 +23,8 @@ class tftp ($base = "/usr/local/tftpboot",
     if $base_alias {
       file { "$base_alias":
           ensure => link,
-          target => "$base";
+          target => "$base",
+          force  => true;
       }
     }
 
