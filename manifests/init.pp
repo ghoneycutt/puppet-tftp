@@ -1,38 +1,43 @@
 # Class: tftp
 #
-# This module manages tftp
+# This module manages a tftp server
 #
-# Requires: class xinetd
+# see http://www.puppetlabs.com/blog/design-pattern-for-dealing-with-data/
+#
+# Author: Garrett Honeycutt <code@garretthoneycutt.com>
+#
+# Requires:
+#   class xinetd
 #
 # Sample Usage: include tftp
 #
 class tftp {
 
-    include xinetd
+  include tftp::data
+  include xinetd
 
-    $base = "/data/tftpboot"
+  package { $tftp::data::tftp_server_package_name:
+    require => Class['xinetd'],
+  } # package
 
-    package { "tftp-server":
-        require => Class["xinetd"],
-    } # package
+  file { $tftp::data::tftp_server_base_dir:
+    ensure  => directory,
+    require => Package[$tftp::data::tftp_server_package_name];
+  } # file
 
-    file { "$base":
-        ensure => directory;
-    } # file
+  xinetd::service { 'tftp':
+    port        => $tftp::data::tftp_server_port,
+    server      => $tftp::data::tftp_server_binary,
+    server_args => $tftp::data::tftp_server_args,
+    socket_type => $tftp::data::tftp_server_socket_type,
+    protocol    => $tftp::data::tftp_server_protocol,
+    cps         => $tftp::data::tftp_server_cps,
+    flags       => $tftp::data::tftp_server_flags,
+    per_source  => $tftp::data::tftp_server_per_source,
+  } # xinetd::service
 
-    xinetd::service {"tftp":
-        port        => "69",
-        server      => "/usr/sbin/in.tftpd",
-        server_args => "-s $base",
-        socket_type => "dgram",
-        protocol    => "udp",
-        cps         => "100 2",
-        flags       => "IPv4",
-        per_source  => "11",
-    } # xinetd::service
-
-    service { "tftp":
-        enable    => true,
-        require   => [ Package["tftp-server"], Xinetd::Service["tftp"] ],
-    } # service
+  service { $tftp::data::tftp_server_service_name:
+    enable    => true,
+    require   => [ File[$tftp::data::tftp_server_base_dir], Xinetd::Service['tftp'] ],
+  } # service
 } # class tftp
